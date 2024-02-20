@@ -48,6 +48,25 @@ void readClauses( ){
         clauses[i].push_back(lit);
     }
   }    
+
+  // Print occur lists
+  int position = 0;
+  for (const auto& lst : volPos) {
+    cout << "Position " << position++ << ": ";
+    for (int lit : lst) {
+        cout << lit << ' ';
+    }
+    cout << endl;
+  }
+  
+  position = 0;
+  for (const auto& lst : volNeg) {
+    cout << "Position " << position++ << ": ";
+    for (int lit : lst) {
+        cout << lit << ' ';
+    }
+    cout << endl;
+  }
 }
 
 
@@ -62,6 +81,7 @@ int currentValueInModel(int lit){
 
 
 void setLiteralToTrue(int lit){
+  cout << "Setting lit = " << lit << " to true..." << endl;
   modelStack.push_back(lit);
   if (lit > 0) model[lit] = TRUE;
   else model[-lit] = FALSE;		
@@ -70,7 +90,11 @@ void setLiteralToTrue(int lit){
 
 bool propagateGivesConflict ( ) {
   while ( indexOfNextLitToPropagate < modelStack.size() ) {
+    int lit = modelStack[modelStack.size()-1];
     ++indexOfNextLitToPropagate;
+    cout << "Propagating..." << "VARIABLE = " << lit << endl;
+
+    /* Antic metode. Ara nomes cal mirar les occur list  
     for (uint i = 0; i < numClauses; ++i) {
       bool someLitTrue = false;
       int numUndefs = 0;
@@ -83,6 +107,29 @@ bool propagateGivesConflict ( ) {
       if (not someLitTrue and numUndefs == 0) return true; // conflict! all lits false
       else if (not someLitTrue and numUndefs == 1) setLiteralToTrue(lastLitUndef);	
     }    
+    */
+    list<int>::iterator it;
+    list<int>::iterator it_end;
+    if (lit < 0) {
+        it=volPos[-lit].begin();
+        it_end=volPos[-lit].end();
+    } else if (lit > 0) {
+        it = volNeg[lit].begin();
+        it_end = volNeg[lit].end();
+    }
+    for (it; it != it_end ; ++it) {
+        cout << "Iterating..." << "value IT = " << *it << endl;
+        bool someLitTrue = false;
+        int numUndefs = 0;
+        int lastLitUndef = 0;
+        for (uint k = 0; not someLitTrue and k < clauses[*it].size(); ++k){
+            int val = currentValueInModel(clauses[*it][k]);
+            if (val == TRUE) someLitTrue = true;
+            else if (val == UNDEF){ ++numUndefs; lastLitUndef = clauses[*it][k]; }
+        }
+        if (not someLitTrue and numUndefs == 0) {cout << "CONFLICT!" << endl; return true;} // conflict! all lits false
+        else if (not someLitTrue and numUndefs == 1) {cout << "SETTO!" << endl; setLiteralToTrue(lastLitUndef);}
+    }
   }
   return false;
 }
