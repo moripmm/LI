@@ -9,6 +9,8 @@ using namespace std;
 #define TRUE 1
 #define FALSE 0
 
+#define DEBUG 0
+
 uint numVars;
 uint numClauses;
 vector<vector<int> > clauses;
@@ -50,6 +52,7 @@ void readClauses( ){
   }    
 
   // Print occur lists
+  #if DEBUG
   int position = 0;
   for (const auto& lst : volPos) {
     cout << "Position " << position++ << ": ";
@@ -67,6 +70,7 @@ void readClauses( ){
     }
     cout << endl;
   }
+  #endif
 }
 
 
@@ -81,7 +85,9 @@ int currentValueInModel(int lit){
 
 
 void setLiteralToTrue(int lit){
+  #if DEBUG
   cout << "Setting lit = " << lit << " to true..." << endl;
+  #endif
   modelStack.push_back(lit);
   if (lit > 0) model[lit] = TRUE;
   else model[-lit] = FALSE;		
@@ -90,10 +96,10 @@ void setLiteralToTrue(int lit){
 
 bool propagateGivesConflict ( ) {
   while ( indexOfNextLitToPropagate < modelStack.size() ) {
-    int lit = modelStack[modelStack.size()-1];
-    ++indexOfNextLitToPropagate;
+    int lit = modelStack[indexOfNextLitToPropagate++];
+    #if DEBUG
     cout << "Propagating..." << "VARIABLE = " << lit << endl;
-
+    #endif
     /* Antic metode. Ara nomes cal mirar les occur list  
     for (uint i = 0; i < numClauses; ++i) {
       bool someLitTrue = false;
@@ -118,7 +124,10 @@ bool propagateGivesConflict ( ) {
         it_end = volNeg[lit].end();
     }
     for (it; it != it_end ; ++it) {
+
+        #if DEBUG
         cout << "Iterating..." << "value IT = " << *it << endl;
+        #endif
         bool someLitTrue = false;
         int numUndefs = 0;
         int lastLitUndef = 0;
@@ -127,8 +136,18 @@ bool propagateGivesConflict ( ) {
             if (val == TRUE) someLitTrue = true;
             else if (val == UNDEF){ ++numUndefs; lastLitUndef = clauses[*it][k]; }
         }
-        if (not someLitTrue and numUndefs == 0) {cout << "CONFLICT!" << endl; return true;} // conflict! all lits false
-        else if (not someLitTrue and numUndefs == 1) {cout << "SETTO!" << endl; setLiteralToTrue(lastLitUndef);}
+        if (not someLitTrue and numUndefs == 0) {
+            #if DEBUG
+            cout << "CONFLICT!" << endl; 
+            #endif
+            return true;
+        } // conflict! all lits false
+        else if (not someLitTrue and numUndefs == 1) {
+            #if DEBUG
+            cout << "SETTO!" << endl; 
+            #endif
+            setLiteralToTrue(lastLitUndef);
+        }
     }
   }
   return false;
