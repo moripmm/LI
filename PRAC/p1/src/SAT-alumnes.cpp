@@ -12,6 +12,9 @@ using namespace std;
 #define DEBUG 0
 #define N 50000
 
+#define APPEARANCES_PONDERATION 0.1
+#define DYN_CONFLICT_PONDERATION 0.9
+
 uint numVars;
 uint numClauses;
 vector<vector<int> > clauses;
@@ -20,6 +23,8 @@ vector<int> modelStack;
 vector<list<int> > volPos;
 vector<list<int> > volNeg;
 vector<int> dynCC; //dynamic conflict counter
+vector<int> appearances;
+vector<float> activity;
 uint conflictCounter;
 uint indexOfNextLitToPropagate;
 uint decisionLevel;
@@ -29,6 +34,25 @@ void insertVOL(int lit, int clause, bool pos)
 {
     if (pos) volPos[lit].insert(volPos[lit].end(), clause);
     else volNeg[lit].insert(volNeg[lit].end(), clause);
+}
+
+void updateActivity(int lit) 
+{
+    int i = abs(lit);
+    activity[i] = appearances[i] * APPEARANCES_PONDERATION + 
+                    dynCC[i] * DYN_CONFLICT_PONDERATION;
+}
+
+void initActivity()
+{
+    for (int i = 0; i < activity.size(); ++i) {
+        activity[i] = appearances[i] * APPEARANCES_PONDERATION;
+    }
+}
+
+void updateAppearances(int lit) 
+{
+    ++appearances[abs(lit)];
 }
 
 void readClauses( ){
@@ -45,6 +69,8 @@ void readClauses( ){
   volPos.resize(numVars+1);
   volNeg.resize(numVars+1);
   dynCC.resize(numVars+1,0); 
+  appearances.resize(numVars+1,0); 
+  activity.resize(numVars+1,0); 
   // Read clauses
   for (uint i = 0; i < numClauses; ++i) {
     int lit;
@@ -52,8 +78,11 @@ void readClauses( ){
         if (lit > 0) insertVOL(lit, i, true);
         else insertVOL(-lit,i,false);
         clauses[i].push_back(lit);
+        updateAppearances(lit);
     }
   }    
+
+  initActivity();
 
   // Print occur lists
   #if DEBUG
@@ -106,8 +135,10 @@ void treatDynConflict(int numClause) {
     cout << "Treating dynamic conflict" << endl;
     #endif
     ++conflictCounter;
-    for (int j = 0; j < clauses[numClause].size(); ++j) 
+    for (int j = 0; j < clauses[numClause].size(); ++j) {
         ++dynCC[abs(clauses[numClause][j])];
+        updateActivity(abs(clauses[numClause][j]));
+    }
     if (conflictCounter > N) {
         conflictCounter = 0;
         for (int i = 0; i < dynCC.size(); ++i) 
@@ -207,9 +238,9 @@ int getNextDecisionLiteral(){
   int max = -1;
   bool allDefined = true;
   for (uint i = 1; i <= numVars; ++i){ //not so stupid heuristic:
-      if (dynCC[i] > max and model[i] == UNDEF) {
+      if (activity[i] > max and model[i] == UNDEF) {
           allDefined = false;
-          max = dynCC[i];
+          max = activity[i];
           nextDecision = i;
       }
   }
