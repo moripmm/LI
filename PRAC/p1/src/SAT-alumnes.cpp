@@ -10,7 +10,6 @@ using namespace std;
 #define FALSE 0
 
 #define DEBUG 0
-
 #define N 50000
 
 uint numVars;
@@ -103,12 +102,20 @@ void treatDynConflict(int numClause) {
     //dynCC en les posicions de les variables del conflicte
     //i dividim entre dos tots els comptadors en cas de que 
     //conflictCounter > N
+    #if DEBUG
+    cout << "Treating dynamic conflict" << endl;
+    #endif
     ++conflictCounter;
-    for (int j = 0; j < clauses[numClauses].size(); ++j) 
-        ++dynCC[clauses[numClauses][j]];
-    if (conflictCounter > N)
+    for (int j = 0; j < clauses[numClause].size(); ++j) 
+        ++dynCC[abs(clauses[numClause][j])];
+    if (conflictCounter > N) {
+        conflictCounter = 0;
         for (int i = 0; i < dynCC.size(); ++i) 
             dynCC[i] = dynCC[i] / 2;
+    }
+    #if DEBUG
+    cout << "Dynamic conflict treated" << endl;
+    #endif
 }
 
 
@@ -118,30 +125,25 @@ bool propagateGivesConflict ( ) {
     #if DEBUG
     cout << "Propagating..." << "VARIABLE = " << lit << endl;
     #endif
-    /* Antic metode. Ara nomes cal mirar les occur list  
-    for (uint i = 0; i < numClauses; ++i) {
-      bool someLitTrue = false;
-      int numUndefs = 0;
-      int lastLitUndef = 0;
-      for (uint k = 0; not someLitTrue and k < clauses[i].size(); ++k){
-	int val = currentValueInModel(clauses[i][k]);
-	if (val == TRUE) someLitTrue = true;
-	else if (val == UNDEF){ ++numUndefs; lastLitUndef = clauses[i][k]; }
-      }
-      if (not someLitTrue and numUndefs == 0) return true; // conflict! all lits false
-      else if (not someLitTrue and numUndefs == 1) setLiteralToTrue(lastLitUndef);	
-    }    
-    */
     list<int>::iterator it;
     list<int>::iterator it_end;
     if (lit < 0) {
         it=volPos[-lit].begin();
         it_end=volPos[-lit].end();
+        #if DEBUG
+        cout << "Negative lit, size of volPos: " << volPos[-lit].size() << endl;
+        #endif
     } else if (lit > 0) {
         it = volNeg[lit].begin();
         it_end = volNeg[lit].end();
+        #if DEBUG
+        cout << "Positive lit, size of volNeg: " << volNeg[lit].size() << endl;
+        #endif
     }
-    for (it; it != it_end ; ++it) {
+    #if DEBUG
+    cout << "Iterators set!"<< endl;
+    #endif
+    for (; it != it_end ; ++it) {
 
         #if DEBUG
         cout << "Iterating..." << "value IT = " << *it << endl;
@@ -169,11 +171,17 @@ bool propagateGivesConflict ( ) {
         }
     }
   }
+    #if DEBUG
+    cout << "Returning false..." << endl;
+    #endif
   return false;
 }
 
 
 void backtrack(){
+  #if DEBUG
+  cout << "Backtracking... " << endl; 
+  #endif
   uint i = modelStack.size() -1;
   int lit = 0;
   while (modelStack[i] != 0){ // 0 is the DL mark
@@ -192,6 +200,9 @@ void backtrack(){
 
 // Heuristic for finding the next decision literal:
 int getNextDecisionLiteral(){
+  #if DEBUG
+  cout << "Deciding next literal... " ; 
+  #endif
   int nextDecision;
   int max = -1;
   bool allDefined = true;
@@ -203,6 +214,9 @@ int getNextDecisionLiteral(){
       }
   }
   if (allDefined) return 0; // returns 0 when all literals are defined
+  #if DEBUG
+  cout << "It's " << nextDecision << '!' << endl;
+  #endif
   return nextDecision;
 }
 
