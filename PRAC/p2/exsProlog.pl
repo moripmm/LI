@@ -63,15 +63,23 @@ pescalar([X1|Y1], [X2|Y2], R1) :- pescalar(Y1,Y2,R2), R1 is R2 + X1*X2, length(Y
 % predicats per les operacions d'intersecció i unió de conjunts donats
 
 % intersection(+L1,+L2,?L3)
-
+intersection([],_,[]).
+intersection([X1|Y1], L2, [X1|R1]) :- member(X1, L2),!, intersection(Y1, L2, R1).
+intersection([_|Y1], L2, R1) :- intersection(Y1, L2, R1).
 
 
 
 % union(+L1,+L2,?L3)
+% Les llistes poden ser repetides? Si ho son, caldra fer una filtracio en R1
+union([],L,L).
+union([X1|Y1], L2, R1) :- member(X1, L2), !, union(Y1, L2, R1).
+union([X1|Y1], L2, [X1|R1]) :- union(Y1, L2, R1).
 
 
-
-
+% Per que no furula?
+union2([],L,L).
+union2([X1|Y1], L2, [X1|R1]) :- union(Y1, L2, R1),!.
+union2([_|Y1], L2, R1) :- union(Y1, L2, R1).
 
 
 % PROB. D =========================================================
