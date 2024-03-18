@@ -124,7 +124,8 @@ fib(N1,R1) :- N1 > 2, N2 is N1-1, N3 is N1-2, fib(N2,R2), fib(N3,R3), R1 is R2 +
 % Tant P com N venen instanciats. El predicat deu ser capaç de
 % generar totes les solucions possibles,
 
-
+dados(0, 0, []).
+dados(P, N, [X|L]):- N > 0,  member(X, [1,2,3,4,5,6]), N1 is N - 1, P1 is P - X, dados(P1, N1, L).
 
 
 
@@ -139,12 +140,13 @@ fib(N1,R1) :- N1 > 2, N2 is N1-1, N3 is N1-2, fib(N2,R2), fib(N3,R3), R1 is R2 +
 % és la suma dels elements d'L.
 
 % suma(+L,?S)
-
+suma([], 0).
+suma([L|L1], P):- suma(L1, P1), P is P1 + L.
 
 
 
 % suma_la_resta(+L)
-
+suma_la_resta(L):- append(L1, [X|L2], L), append(L1, L2, L3), suma(L3, X).
 
 
 
