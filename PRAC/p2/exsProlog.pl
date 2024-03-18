@@ -161,6 +161,15 @@ suma_la_resta(L):- append(L1, [X|L2], L), append(L1, L2, L3), suma(L3, X).
 % card( [1,2,1,5,1,3,3,7] )  l'intèrpret escriurà:
 % [[1,3],[2,1],[5,1],[3,2],[7,1]].
 
+card(L) :- card_appears(L,R), write(R).
+
+card_appears([],[]).
+card_appears([X|Y],[[X,C]|Y1]):- card_count(X, [X|Y], C), delete([X|Y], X, D), card_appears(D,Y1).
+
+card_count(_,[],0).
+card_count(X,[X1|Y],C) :- card_count(X,Y,C1), X =:= X1, C is C1 + 1.
+card_count(X,[X1|Y],C) :- card_count(X,Y,C1), X =\= X1, C is C1 + 0.
+
 
 
 
@@ -176,6 +185,14 @@ suma_la_resta(L):- append(L1, [X|L2], L), append(L1, L2, L3), suma(L3, X).
 % l'intèrpret respon yes, i a la consulta:
 % ?- esta_ordenada([3,67,45]).
 % respon no.
+
+esta_ordenada([]) :- write("yes").
+esta_ordenada([X|Y]) :- mes_petit_que_primer(X,Y), esta_ordenada(Y),!.
+esta_ordenada(_) :- write("no").
+
+mes_petit_que_primer(_,[]).
+mes_petit_que_primer(X,[X1|_]) :- X =< X1.
+
 
 
 
