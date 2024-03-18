@@ -88,12 +88,15 @@ union2([_|Y1], L2, R1) :- union(Y1, L2, R1).
 % inversa d'una llista donada.
 
 % ultim(+L,?E)
-
+ultim(L, X) :- conc(_, [X], L).
 
 
 
 % inversa(+L1,?L2)
-
+inversa([], []).
+inversa(L,[X | Y]) :-
+append(T, [X], L),
+inversa(T, Y),!.
 
 
 
@@ -105,7 +108,9 @@ union2([_|Y1], L2, R1) :- union(Y1, L2, R1).
 % per a la N donada. Aquests nombres es defineixen així:
 % fib(1) = 1, fib(2) = 1, i si N > 2 llavors
 % fib(N) = fib(N-1) + fib(N-2)
-
+fib(1,1).
+fib(2,1).
+fib(N1,R1) :- N1 > 2, N2 is N1-1, N3 is N1-2, fib(N2,R2), fib(N3,R3), R1 is R2 + R3,!. 
 
 
 
