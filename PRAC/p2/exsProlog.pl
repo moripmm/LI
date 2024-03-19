@@ -88,7 +88,7 @@ union2([_|Y1], L2, R1) :- union(Y1, L2, R1).
 % inversa d'una llista donada.
 
 % ultim(+L,?E)
-ultim(L, X) :- conc(_, [X], L).
+ultim(L, X) :- append(_, [X], L).
 
 
 
@@ -207,8 +207,12 @@ mes_petit_que_primer(X,[X1|_]) :- X =< X1.
 % totes les permutacions dels seus elements que siguin palíndroms
 % (capicues). Per exemple, amb la consulta palindrom([a,a,c,c])
 % s'escriu [a,c,c,a] i [c,a,a,c]
-% (possiblement diverses vegades, no cal que eviteu les repeticions).
+% (possiblement diverses vegades, no cal que eviteu les repeticions)
+palindroms(L) :- permutation(L,P), es_palindrom(P), write(P), nl, false.
 
+es_palindrom([]).
+es_palindrom([_]).
+es_palindrom([P|Y]) :- ultim(Y,U), P = U, append(L, [U], Y), es_palindrom(L),!.
 
 
 
@@ -237,23 +241,24 @@ mes_petit_que_primer(X,[X1|_]) :- X =< X1.
 % significa: P és una cadena de dominó correcta (tal qual,
 % sense necessitat de girar cap fitxa):
 
-p([],[]).
-p(L,[X|P]) :- select(X,L,R), p(R,P).
+%p([],[]).
+%p(L,[X|P]) :- select(X,L,R), p(R,P).
 
 dom(L) :- p(L,P), ok(P), write(P), nl.
 dom(_) :- write('no hi ha cadena'), nl.
 
 % a) Escriu el predicat ok(+P) que falta.
-
-
-
-
-
+ok([f(_,_)]).
+ok([f(_,X)|L]) :- append([f(X1,_)],_,L), X = X1, ok(L),!.
 
 % b) Estén el predicat p/2 per a que el programa també pugui
 %    fer cadenes girant alguna de les fitxes de l'entrada.
 
+p([],[]).
+p(L,[X|P]) :- select(X,L,R), p(R,P).
+p(L,[X1|P]) :- select(X,L,R), swap(X,X1), p(R,P).
 
+swap(f(X1,X2),f(S1,S2)) :- S1 is X2, S2 is X1.
 
 
 
@@ -288,3 +293,4 @@ dom(_) :- write('no hi ha cadena'), nl.
 %    between(0,3,NSNC1),  % NSNC1: "no. no smokers with no cancer group 1"
 %    10 is SC1+SNC1+NSC1+NSNC1,
 %    ...
+
