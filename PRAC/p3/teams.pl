@@ -53,8 +53,10 @@ symbolicOutput(0).  % set to 1 for DEBUGGING: to see symbolic output only; 0 oth
 worker(W) :-          numWorkers(N), between(1,N,W).
 workerScore(W,S) :-   worker(W), score(W,S).
 team(T) :-            numTeams(N), between(1,N,T).
-incompatibleWorkers(W1,W2) :- ...  %% Complete this!
-
+incompatibleWorkers(W1,W2) :- 
+            worker(W1), worker(W2),
+            workerScore(W1,S1), workerScore(W2,S2), maxScore(MS),
+            S1 + S2 < MS + 1.
 %%%%%%% End helpful definitions ===============================================================
 
 
@@ -72,10 +74,12 @@ writeClauses :-
 writeClauses :- told, nl, write('writeClauses failed!'), nl,nl, halt.
 
 eachWorkerExactlyOneTeam :-
-        worker(w),
+        worker(W),
         findall(wt(W,T), team(T), Lits),
         exactly(1, Lits), fail.
 eachWorkerExactlyOneTeam.
+        
+        
 
 
 %%%%%%%  3. DisplaySol: show the solution. Here M contains the literals that are true in the model:
