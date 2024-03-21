@@ -270,7 +270,7 @@ swap(f(X1,X2),f(S1,S2)) :- S1 is X2, S2 is X1.
 % ?- flatten( [a,b,[c,[d],e,[]],f,[g,h]], F ).
 % F = [a,b,c,d,e,f,g,h]
 flatten([],[]).
-flatten([X|L], [R1|L1]) :- \+is_list(X),! R1 = X, flatten(L,L1).
+flatten([X|L], [R1|L1]) :- \+is_list(X),!, R1 = X, flatten(L,L1).
 flatten([X|L], [_|L1]) :- append(X,L,L3), flatten(L3,L1).
 
 % PROB. M ========================================================
@@ -282,11 +282,25 @@ flatten([X|L], [_|L1]) :- append(X,L,L3), flatten(L3,L1).
 % the situation is the opposite: the proportion of people with
 % lung cancer is higher among non-smokers than among smokers!
 % Can this be true? Write a little Prolog program to find it out.
-cancer :- makeGroup(10,G1), makeGroup(10,G2).
+cancer :- makeGroup(10,G1), makeGroup(10,G2), 
+            percentageBound(G1), percentageBound(G2),  
+            append(G1,G2,GT), percentageBound2(GT), !.
 
 % 0=no S, no C; 1 = no S, C; 2 = S, no C, 3 = S, C
-makeGroup(0,G1).
+makeGroup(0,[]).
 makeGroup(N,[X|L]) :- N > 0, N1 is N-1, between(0,3,X), makeGroup(N1,L).
+
+percentageBound([]).
+percentageBound(G) :- pbAux(G,PNSC,PSC), PNSC < PSC.
+
+percentageBound2([]).
+percentageBound2(G) :- pbAux(G,PNSC,PSC), PNSC > PSC.
+
+pbAux([], 0, 0).
+pbAux([X|L],P1,P2) :- X = 1, pbAux(L, P12, P22), P1 is P12 + 1, P2 is P22 + 0.
+pbAux([X|L],P1,P2) :- X = 3, pbAux(L, P12, P22), P2 is P22 + 1, P1 is P12 + 0.
+pbAux([_|L],P1,P2) :- pbAux(L, P12, P22), P2 is P22 + 0, P1 is P12 + 0.
+
 
 %main :-
 %    between(0,3,SC1),    % SC1:   "no.    smokers with    cancer group 1"
