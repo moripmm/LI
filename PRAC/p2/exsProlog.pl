@@ -269,12 +269,9 @@ swap(f(X1,X2),f(S1,S2)) :- S1 is X2, S2 is X1.
 % (cat.: ``aplana'') the list F as in the example:
 % ?- flatten( [a,b,[c,[d],e,[]],f,[g,h]], F ).
 % F = [a,b,c,d,e,f,g,h]
-
-
-
-
-
-
+flatten([],[]).
+flatten([X|L], [R1|L1]) :- \+is_list(X),! R1 = X, flatten(L,L1).
+flatten([X|L], [_|L1]) :- append(X,L,L3), flatten(L3,L1).
 
 % PROB. M ========================================================
 % Consider two groups of 10 people each. In the first group,
@@ -285,6 +282,11 @@ swap(f(X1,X2),f(S1,S2)) :- S1 is X2, S2 is X1.
 % the situation is the opposite: the proportion of people with
 % lung cancer is higher among non-smokers than among smokers!
 % Can this be true? Write a little Prolog program to find it out.
+cancer :- makeGroup(10,G1), makeGroup(10,G2).
+
+% 0=no S, no C; 1 = no S, C; 2 = S, no C, 3 = S, C
+makeGroup(0,G1).
+makeGroup(N,[X|L]) :- N > 0, N1 is N-1, between(0,3,X), makeGroup(N1,L).
 
 %main :-
 %    between(0,3,SC1),    % SC1:   "no.    smokers with    cancer group 1"
