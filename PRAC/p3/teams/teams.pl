@@ -56,7 +56,7 @@ team(T) :-            numTeams(N), between(1,N,T).
 incompatibleWorkers(W1,W2) :- 
             worker(W1), worker(W2),
             workerScore(W1,S1), workerScore(W2,S2), maxScore(MS),
-            S1 + S2 < MS + 1.
+            S1 + S2 > MS.
 %%%%%%% End helpful definitions ===============================================================
 
 
@@ -69,8 +69,10 @@ satVariable( wt(W,T) ) :- worker(W), team(T).
 %%%%%%%  2. Clause generation for the SAT solver: =============================================
 
 writeClauses :-
-    .... %% Complete this!  
-    true,!.
+	eachWorkerExactlyOneTeam,
+	teamHasMinMaxSize,
+	notIncompatibleWorkers,
+	true,!.
 writeClauses :- told, nl, write('writeClauses failed!'), nl,nl, halt.
 
 eachWorkerExactlyOneTeam :-
@@ -78,8 +80,23 @@ eachWorkerExactlyOneTeam :-
         findall(wt(W,T), team(T), Lits),
         exactly(1, Lits), fail.
 eachWorkerExactlyOneTeam.
-        
-        
+
+teamHasMinMaxSize :-
+    team(T),
+    minSize(Min), maxSize(Max),  
+    findall(wt(W,T), worker(W), Lits),
+    atLeast(Min, Lits),
+    atMost(Max, Lits), fail.
+teamHasMinMaxSize.
+
+notIncompatibleWorkers :-
+	team(T),
+	worker(W1), worker(W2),
+	W1 \= W2,
+	incompatibleWorkers(W1,W2),
+	append([wt(W1,T)],[wt(W2,T)],Lits),
+	atMost(1,Lits), fail.
+notIncompatibleWorkers.
 
 
 %%%%%%%  3. DisplaySol: show the solution. Here M contains the literals that are true in the model:
