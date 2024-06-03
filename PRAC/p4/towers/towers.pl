@@ -112,6 +112,7 @@ posWatchesVillage(V,I,J):- position(I,J), colVillage(V,J).            %         
 
 satVariable( towerPos(I,J) ):- row(I), col(J).  % means "there is a tower at position I-J"
 % YOU MAY WANT TO INTRODUCE SOME OTHER VARIABLE FOR MAKING THE CARDINALITY CONSTRAINTS SMALLER
+satVariable( towerVil(V) ):- village(V).  % means "there is a tower at village V"
 
 
 %%%%%%%  2. Clause generation for the SAT solver: =============================================
@@ -121,9 +122,23 @@ satVariable( towerPos(I,J) ):- row(I), col(J).  % means "there is a tower at pos
 
 writeClauses(infinite):- !, upperLimitTowers(N), writeClauses(N),!.
 writeClauses(MaxNumTowers):-
-    ...
+    correlateVariables,
+    %atMostOneTowerPerVillage,
+    %significantVillageHasTower,
+    %villagesAreWatched,
     true,!.                    % this way you can comment out ANY previous line of writeClauses
 writeClauses(_):- told, nl, write('writeClauses failed!'), nl,nl, halt.
+
+correlateVariables :-
+    village(V),
+    findall(I, (rowVillage(V,I)), RowVilList),
+    findall(J, (colVillage(V,J)), ColVilList),
+    findall(towerPos(I1, J1), 
+        (member(I1, RowVilList), member(J1, ColVilList)), PosLits),
+    expressOr(towerVil(V), PosLits).
+correlateVariables.
+
+
 
 
 %%%%%%%  3. DisplaySol: this predicate displays a given solution M: ===========================
@@ -142,7 +157,7 @@ write2(N):- write(N),!.
 
 %%%%%%%  4. This predicate computes the cost of a given solution M: ===========================
 
-costOfThisSolution(M,Cost):- ...
+costOfThisSolution(M,Cost):- findall(T, member(towerVil(T), M), L), sort(L, L1), length(L1, Cost),!.
 
 
 %%%%%% ========================================================================================
