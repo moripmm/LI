@@ -123,9 +123,11 @@ satVariable( towerVil(V) ):- village(V).  % means "there is a tower at village V
 writeClauses(infinite):- !, upperLimitTowers(N), writeClauses(N),!.
 writeClauses(MaxNumTowers):-
     correlateVariables,
-    %atMostOneTowerPerVillage,
-    %significantVillageHasTower,
-    %villagesAreWatched,
+    atMostMaxTowers(MaxNumTowers),
+    %  atMostOneTowerPerVillage, -- implementat dins de la funcio correlateVariables
+    significantVillageHasTower,
+    villagesAreWatched,
+    towersOnlyInsideVillages,
     true,!.                    % this way you can comment out ANY previous line of writeClauses
 writeClauses(_):- told, nl, write('writeClauses failed!'), nl,nl, halt.
 
@@ -135,11 +137,32 @@ correlateVariables :-
     findall(J, (colVillage(V,J)), ColVilList),
     findall(towerPos(I1, J1), 
         (member(I1, RowVilList), member(J1, ColVilList)), PosLits),
-    expressOr(towerVil(V), PosLits).
+    expressOr(towerVil(V), PosLits),
+    atMost(1, PosLits), fail.
 correlateVariables.
 
+atMostMaxTowers(MaxNumTowers):-
+	findall(towerVil(V), (village(V)), TowVilList),
+	atMost(MaxNumTowers, TowVilList), fail. 
+atMostMaxTowers(_).
 
+significantVillageHasTower:-
+        significantVillage(V),
+	writeOneClause([towerVil(V)]), fail. 
+significantVillageHasTower.
 
+villagesAreWatched :-
+	village(V),
+	findall(towerPos(I,J), posWatchesVillage(V,I,J), PosLits),
+	atLeast(1, PosLits), fail.
+villagesAreWatched. 
+
+towersOnlyInsideVillages :-
+    position(I,J),
+    \+ posVillage(_,I,J),
+    writeOneClause( [-towerPos(I,J)] ),
+    fail.
+towersOnlyInsideVillages.
 
 %%%%%%%  3. DisplaySol: this predicate displays a given solution M: ===========================
 

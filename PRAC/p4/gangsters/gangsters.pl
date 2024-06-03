@@ -67,8 +67,9 @@ available(G,H):-   hour(H), gangster(G), \+blocked(G,H).
 
 %%%%%%%  1. Declare SAT variables to be used: =================================================
 
-satVariable( does(G,T,H) ) :- ...  %  means:  "gangster G does task T at hour H"     (MANDATORY)
+satVariable( does(G,T,H) ) :- gangster(G), task(T), hour(H).  %  means:  "gangster G does task T at hour H"     (MANDATORY)
 
+satVariable( busy(G,H) ) :- gangster(G), hour(H).
 
 %%%%%%%  2. Clause generation for the SAT solver: =============================================
 
@@ -77,9 +78,53 @@ satVariable( does(G,T,H) ) :- ...  %  means:  "gangster G does task T at hour H"
 
 writeClauses(infinite) :- !, writeClauses(72),!.
 writeClauses(MaxConsecutiveHours) :-
-    ...
+    oneTaskPerHour,
+    noDiffTaskIn2ConsH,
+    gangstNotAvail,
+    gangstNeeded,
+    limitConsecHours(MaxConsecutiveHours),
     true,!.
 writeClauses(_) :- told, nl, write('writeClauses failed!'), nl,nl, halt.
+
+    
+oneTaskPerHour :-
+    gangster(G),
+    hour(H),
+    findall(does(G,T,H), (task(T)), Lits),
+    atMost(1, Lits), fail.
+oneTaskPerHour.
+
+noDiffTaskIn2ConsH :-
+    gangster(G),
+    hour(H1), H2 is H1 + 1, hour(H2),
+    task(T1), task(T2), 
+    T2 \= T1,
+    writeOneClause( [ -does(G,T1,H1), -does(G,T2,H2) ] ), fail.
+noDiffTaskIn2ConsH.
+
+gangstNotAvail :-
+    gangster(G),
+    hour(H),
+    \+ available(G,H),
+    task(T),
+    writeOneClause([ -does(G,T,H) ]), fail.
+gangstNotAvail.
+
+gangstNeeded :-
+	task(T),
+	hour(H),
+	needed(T,H,N),
+	findall( does(G,T,H), gangster(G), Lits),
+	exactly(N, Lits), fail.
+gangstNeeded.
+
+limitConsecHours(MaxConsecutiveHours) :-
+	gangster(G), task(T), hour(H),  
+	HFin is H + MaxConsecutiveHours, hour(HFin),
+	findall( does(G,T,H1), between(H, HFin, H1), HourLits ),
+	atMost(MaxConsecutiveHours, HourLits), fail.
+limitConsecHours(_).
+
 
 
 %%%%%%%  3. DisplaySol: this predicate displays a given solution M: ===========================
@@ -101,15 +146,11 @@ writeIfBusy(_,_,_) :- write('-'),!.
 
 % Here the sort predicate is used to remove repeated elements of the list:
 costOfThisSolution(M,Cost) :-  
-    between(0,72,N), Cost is 72-N
-    gangster(G),
-    gangsterWorks(N,G,Cost), !.
-
-gangsterWorks(M,G,N) :-
-    HMax is 72-N+1
-    between(1,HMax,Hini),
-    HFi is Hini+N-1.
-
+	between(0, 71, N), Cost is 72-N,
+	gangster(G), task(T), hour(H),
+	HFin is H + Cost - 1, hour(HFin),
+	findall( does(G, T, H1), (between(H,HFin,H1), member( does(G,T,H1), M)), Lits ),
+        length(Lits, Cost), !.	
 
 %%%%%%% =======================================================================================
 
