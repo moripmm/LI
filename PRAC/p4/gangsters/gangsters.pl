@@ -100,7 +100,15 @@ writeIfBusy(_,_,_) :- write('-'),!.
 %%%%%%%  4. This predicate computes the cost of a given solution M: ===========================
 
 % Here the sort predicate is used to remove repeated elements of the list:
-costOfThisSolution(M,Cost) :- ...
+costOfThisSolution(M,Cost) :-  
+    between(0,72,N), Cost is 72-N
+    gangster(G),
+    gangsterWorks(N,G,Cost), !.
+
+gangsterWorks(M,G,N) :-
+    HMax is 72-N+1
+    between(1,HMax,Hini),
+    HFi is Hini+N-1.
 
 
 %%%%%%% =======================================================================================

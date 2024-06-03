@@ -1,0 +1,172 @@
+
+   donat un conjunt de villages situades en un mapa rectangular, hem de
+situar towers en algunes de les villages de tal forma que totes les villagse
+siguin "observables" des de al menys una de les towers.
+Un village és "observable" (està vigilada) si al menos hi ha una tower
+a lo largo de una sus files i/o a lo largo de una de sus columnes.
+   EN AQUEST EXEMPLE:
+     * el village 'a':  village(a, 2,20,2)   és troba situada a la fila 2
+       columna 20, i te forma de quadrat de mida 2x2. Això vol dir que
+       el village 'a' ocupa les posicions (2,20), (2,21), (3,20) i (3,21).
+     * hem d'optimitzar (minimitzar en aquest cas) el número de towers que
+       col·loquem. Partim d'un número máxim/inicial de towers que és 10.
+   Fem servir una SAT variable   towerPos(I,J)   que expressa el següent:
+   "there is a tower at position I-J".
+   N'hi han tantes varibles proposionales com posicions (I,J) n'hi hagi en
+   el map. EN AQUEST EXEMPLE (un map de 34x40) tindrem 34x40 = 1360
+   d'aquestes SAT variables. A partir d'ara els anomenaré tp(I,J) enlloc
+   de towerPos(I,J). Per exemple, si el solver diu que tp(3,16) és cert
+   això voldrà dir que hi haurà un tower a la posició (3,16).
+   Hem d'impossar una serie de restriccions per tal que el SAT solver ens
+   doni una solució "correcte/vàlida":
+     * l'enunciat diu que com a molt pot haver una tower per village.
+       Seguint amb el village 'a' D'AQUEST EXEMLE, això vol dir que de les
+       seves posicions ( (2,20), (2,21), (3,20), (3,21) ), en, com a molt
+       una,  n'hi haurà tower. Farien servir aquest cardinality constraint:
+       AMO( tp(2,20), tp(2,21), tp(3,20), tp(3,21) )    AMO = "At Most One"
+       que genera les següents 6 clàusules:
+       -tp(2,20) v -tp(2,21)
+       -tp(2,20) v -tp(3,20)
+       -tp(2,20) v -tp(3,21)
+       -tp(2,21) v -tp(3,20)
+       -tp(2,21) v -tp(3,21)
+       -tp(3,20) v -tp(3,21)
+     Evindenment aqueste restricció s'aplica a totes i cadascuna de les
+     villages.
+     Altes restriccions que apareixen a l'enunciat del problema són:
+       * les tower només poden aparèixer dintre d'un village, o el que és
+         el mateix, NO POT haver-hi towers en les posicions fora de les
+	 villages.
+       * tota village estarà "vigilada": en alguna de les posicions al
+         llarg de les files o columnes del village ha d'haver una tower.
+       * les villages importants necesàriament tenen tower.
+     Les quatre restriccons que s'han descrit, es poden expressar fent
+     servir la SAT variable towerPos(I,J). És molt interessant que
+     fem una aproximació del número de clàusules que es generen en
+     cada restricció. Per exemple, per la primera restricció ("en cada
+     village n'hi ha com a molt una tower") tindrem *per cada village*:
+     supossem que la seva mida la seva mida és de N*N posicions, i
+     diguem K = N*N, llavors codificarem un
+       AMO(tp(r1,c1), ... tp(rK,cK)),
+     que generarà K*(K-1)/2 clàusules.
+     És important adonar-se que totes aquestes que aquestes restriccions
+     *no depenen* del número màxim de towers que estem considerant.
+     Per exemple, la restricció de que les towers hagin d'estar situades
+     dintre de les villages, no depen si hem de situar com a màxim
+     3 o 14 towers.
+     Finalment, resta per expressar justament que el número total de towers
+     que col·loquem en aquesta cerca d'una solució, ha de ser inferior
+     a un cert valor MaxTowers.
+     El valor inicial bé donat pel predicat  upperLimitTowers,
+     i l'objectiu és minimitzar-ho.
+     Analitzaré l'EXEMPLE QUE ENS HAN DONAT: un mapa de 34x40 = 1360
+     posicions, on hi han situades 24 villages, i amb un valor inicial de
+     MaxTowers de 10.
+     Veurem tres versions per tal de codificar aquesta restricció,
+     cadascuna de les quals genera menys clàusules:
+     * PRIMERA VERSIÓ
+       Recordem que n'hi han 34x40 = 1360 SAT variables tp(I,J),
+       una per cada posició del mapa, que expressen que a la posició
+       (I,J) hi ha una tower.
+       Per tant, en aquesta restricció necesitem impossar que
+       com a molt 10 d'aquestes 1360 SAT variables són certes:
+         atMost(10, [tp(1,1),...tp(1,40),...,tp(34,1),...,tp(34,40)])
+	            <---------------- 1360 literals ---------------->
+       Aquest cardinality constraint genera (1360 sobre 11) clàusules:
+       1360! / (11! * (1360-11)!) = 7.082123886 * 10^26 clàusules
+       Mai acabarem de generar-les!!!
+     * SEGONA VERSIÓ
+       Com que hi ha una restricció que m'assegura que fora de les
+       villages no hi ha towers, en realitat n'hi ha prou amb
+       demanar que n'hi hagin com a molt 10 towers en les posicions
+       corresponents a villages, que són moltes menys.
+       Les posicions de village sumen un total de:
+         4(vil. a) + 4(vil. b) + ... + 16(vil. e) + ... +
+	 9(vil. w) + 4(vil. x) = 148 posicions corresponents a villages
+       De les 1360 posicions del mapa, només 148 són de villages.
+       Ara necesitarem codificar aquest altre cardinality constraint:
+         atMost(10, [tp(r1,c1),tp(r2,c2),...tp(r148,c148)]
+	            <----------- 148 literals ----------->
+       que generarà:
+       148! / (11! * (148-11)!) = 1.277532917 * 10^16 clàusules
+       Tampoc acabarem de generar-les i escriure-les!!!
+     * TERCERA VERSIÖ
+       Com que també tenim una restricció que diu que un village
+       pot tenir com a màxim una tower, en realitat cal expressar que,
+       com a màxim, n'hi haura 10 villages del total de 24 villages
+       D'AQUEST EXEMPLE que tinguin tower.
+       Però l'unica SAT variable que hem definit expressa que
+       n'hi ha una tower a la POSICIÖ (I,J), sense relacionar-la
+       amb el VILLAGE al que pertany la posició (I,J), i que,
+       per tant, tindrà la tower.
+       Per tant, necesitem definir un altre SAT variable, que expressi
+       que un village V té una tower independenment de en quina
+       posició del village hi sigui:
+          satVariable( towerVil(V) ):- village(V).        % means "there is a tower at village V"
+       Per abreujar escriure tv(V) enlloc de towerVil(V).
+       EN AQUEST EXEMPLE tenim 24 villages, i per tant n'hi ha 24
+       d'aquestes SAT vars:  tv(a), tv(b), ..., tv(x).
+       Si el SAT solver diu que tv(a) és certa equival a saber que
+       hi haurà una tower al village 'a' (en alguna de les seves 4
+       posicions).
+       Ara, la restrició de que com a molt es col·locaran 10
+       towers equival a dir que, com a molt, 10 d'aquests SAT vars tv(V)
+       seràn certes.
+       En aquest escenari necesitarem codificar aquest altre cardinality
+       constraint:
+         atMost(10, [tv(a), tv(b), ..., tv(x)])
+	            <------ 24 literals ----->
+       que generarà:
+       24! / (11! * (24-11)!) = 2496144 clàusules
+       Moltes clàusules, però abordable.
+    Per últim, cal veure que les variables tp(I,J) i les variables tv(V)
+    están relacionades, no són independents entre si.
+    Recordem la informació del village 'a':   village(a,2,20,2)
+    que ocupa les posicions (2,20), (2,21), (3,20) i (3,21).
+    El SAT solver no hauria de donar-me una solució en la que
+    la SAT var tp(2,21) fós certa i en la que la SAT var tv(a) fos falsa.
+    No seria coherent.
+    Tampoc una solució en la que tv(a) fos certa i totes les
+    tp(2,20), tp(2,21), tp(3,20) i tp(3,21) fosin falses.
+    De fet, podem veure aquesta relació entre les variables tv(V) i les
+    variables tp(I,J) com a una "restricció" més que també ha de complir
+    la solució que ens donarà el SAT solver.
+    Aquesta relació ha d'expressar el següent: tv(V) és cert SI I NOMÉS SI
+    alguna de les tp(I,J) corresponents a posicions (I,J) del village V
+    és certa. Per exemple, pel village 'a', hem d'afegir aquesta "restricció":
+      tv(a)  <-->  ( tp(2,20) v tp(2,21) v tp(3,20) v tp(3,21) )
+    que generarà les clàusules corresponents a les dues implicacions:
+      * tv(a)  -->  ( tp(2,20) v tp(2,21) v tp(3,20) v tp(3,21) )
+    que dona lloc només a una clàusula:
+        -tv(a) v tp(2,20) v tp(2,21) v tp(3,20) v tp(3,21)
+    i a la implicació:
+      * tv(a)  <--  ( tp(2,20) v tp(2,21) v tp(3,20) v tp(3,21) )
+    que dona lloc a, en el cas del village 'a' D'AQUEST EXEMPLE,
+    a les següents 4 clàusules:
+        tv(a) v -tp(2,20)
+        tv(a) v -tp(2,21)
+        tv(a) v -tp(3,20)
+        tv(a) v -tp(3,21)
+    En la biblioteca de predicats definits a l'esquema que us donem,
+    existeix un predicat expressOr/2  que és el que genera totes lés
+    clàusules que imposen aquesta fòrmula, aquesta forma de relació
+    entre les variables.
+    Seguint amb l'exemple de la village 'a', es faria servir:
+       expressOr( tv(a),  [tp(2,20), tp(2,21), tp(3,20), tp(3,21)] )
+    Obviament hem d'expressar aquestes relacions també per la resta
+    de villages i les seves respectives posicions.
+
+    Ara, amb:
+      * les 4 restriccions inicials que hem vist, que fan servir
+        les SAT variables towerPos(I,J) (#)
+      * la restricció que limita el número màxim de towers que es
+        poden col·locar (expressada amb la nova SAT variable towerVil(V)
+      * la "restricció" que estableix la relació entre les SAT vars
+        towerPos(I,J) i towerVil(V)
+    generarem un número prou petit de clàusules perquè el
+    SAT solver pugui llavors carregar-les i buscar, i trobar,
+    una solució.
+
+    (#) La restricció de que els villages "importants" han de tenir
+        tower també es pot expressar (de forma més simple) amb la nova
+	SAT variable towerVil.
